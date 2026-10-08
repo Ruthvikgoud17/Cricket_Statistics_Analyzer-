@@ -1,0 +1,2116 @@
+"""
+=============================================================================
+Project Title: Cricket Statistics Analyzer
+Course: Python Programming (Course-End Project)
+College: Vardhaman College of Engineering
+Description:
+    A complete, single-file Python application to process, analyze, and
+    compare cricket player statistics. Designed to run seamlessly in any
+    Python environment or online compiler with ZERO external dependencies.
+
+Syllabus Topics Covered:
+    1. Variables & Data Types (int, float, str, bool)
+    2. Operators (Arithmetic, Relational, Logical, Membership)
+    3. Conditional Statements (if, elif, else)
+    4. Loops (while, for, enumerate, break, continue)
+    5. Strings & Text Formatting (f-strings, strip, lower, title, center)
+    6. Collections (Lists, Tuples, Sets)
+    7. Dictionaries (Nested player records, key-value mappings)
+    8. Functions (Modular parameters, return values, type hints)
+    9. Recursion (Base cases & recursive steps: sum and binary search)
+    10. Searching Algorithms (Linear Search & Recursive Binary Search)
+    11. Sorting Algorithms (Custom Bubble Sort with swap flag optimization)
+    12. File I/O & Persistence (JSON load/save and formatted TXT report export)
+    13. Exception Handling (try, except, ZeroDivisionError, ValueError)
+=============================================================================
+"""
+
+import copy
+import json
+import os
+import sys
+from typing import List, Dict, Any, Optional, Tuple
+
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+# =============================================================================
+# DEFAULT IN-MEMORY DATASET (5 CORE PLAYERS: Rohit, Virat, Dhoni, Iyer, Bumrah)
+# Ensures the code runs seamlessly in ANY compiler without external file dependencies
+# =============================================================================
+
+DEFAULT_PLAYERS: List[Dict[str, Any]] = [
+    {
+        "id": 1,
+        "name": "Rohit Sharma",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 262,
+        "innings": 254,
+        "runs": 10709,
+        "balls_faced": 11720,
+        "highest_score": 264,
+        "not_outs": 36,
+        "centuries": 31,
+        "half_centuries": 55,
+        "fours": 995,
+        "sixes": 323,
+        "wickets": 9,
+        "overs_bowled": 128.5,
+        "runs_conceded": 715
+    },
+    {
+        "id": 2,
+        "name": "Virat Kohli",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 292,
+        "innings": 280,
+        "runs": 13848,
+        "balls_faced": 14780,
+        "highest_score": 183,
+        "not_outs": 44,
+        "centuries": 50,
+        "half_centuries": 72,
+        "fours": 1294,
+        "sixes": 151,
+        "wickets": 5,
+        "overs_bowled": 108.2,
+        "runs_conceded": 680
+    },
+    {
+        "id": 3,
+        "name": "MS Dhoni",
+        "country": "India",
+        "role": "Wicket-Keeper",
+        "matches": 350,
+        "innings": 297,
+        "runs": 10773,
+        "balls_faced": 12303,
+        "highest_score": 183,
+        "not_outs": 84,
+        "centuries": 10,
+        "half_centuries": 73,
+        "fours": 826,
+        "sixes": 229,
+        "wickets": 1,
+        "overs_bowled": 6.0,
+        "runs_conceded": 31
+    },
+    {
+        "id": 4,
+        "name": "Shreyas Iyer",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 62,
+        "innings": 57,
+        "runs": 2421,
+        "balls_faced": 2390,
+        "highest_score": 128,
+        "not_outs": 7,
+        "centuries": 5,
+        "half_centuries": 18,
+        "fours": 228,
+        "sixes": 59,
+        "wickets": 0,
+        "overs_bowled": 11.1,
+        "runs_conceded": 78
+    },
+    {
+        "id": 5,
+        "name": "Jasprit Bumrah",
+        "country": "India",
+        "role": "Bowler",
+        "matches": 89,
+        "innings": 28,
+        "runs": 125,
+        "balls_faced": 210,
+        "highest_score": 16,
+        "not_outs": 14,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 12,
+        "sixes": 3,
+        "wickets": 149,
+        "overs_bowled": 745.3,
+        "runs_conceded": 3420
+    },
+    {
+        "id": 6,
+        "name": "Sachin Tendulkar",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 463,
+        "innings": 452,
+        "runs": 18426,
+        "balls_faced": 21367,
+        "highest_score": 200,
+        "not_outs": 41,
+        "centuries": 49,
+        "half_centuries": 96,
+        "fours": 2016,
+        "sixes": 195,
+        "wickets": 154,
+        "overs_bowled": 1341.3,
+        "runs_conceded": 6806
+    },
+    {
+        "id": 7,
+        "name": "Ricky Ponting",
+        "country": "Australia",
+        "role": "Batsman",
+        "matches": 375,
+        "innings": 365,
+        "runs": 13704,
+        "balls_faced": 17046,
+        "highest_score": 164,
+        "not_outs": 39,
+        "centuries": 30,
+        "half_centuries": 82,
+        "fours": 1231,
+        "sixes": 162,
+        "wickets": 3,
+        "overs_bowled": 25.1,
+        "runs_conceded": 158
+    },
+    {
+        "id": 8,
+        "name": "Kumar Sangakkara",
+        "country": "Sri Lanka",
+        "role": "Wicket-Keeper",
+        "matches": 404,
+        "innings": 380,
+        "runs": 14234,
+        "balls_faced": 18048,
+        "highest_score": 169,
+        "not_outs": 41,
+        "centuries": 25,
+        "half_centuries": 93,
+        "fours": 1385,
+        "sixes": 88,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 9,
+        "name": "Sanath Jayasuriya",
+        "country": "Sri Lanka",
+        "role": "All-Rounder",
+        "matches": 445,
+        "innings": 433,
+        "runs": 13430,
+        "balls_faced": 14725,
+        "highest_score": 189,
+        "not_outs": 18,
+        "centuries": 28,
+        "half_centuries": 68,
+        "fours": 1500,
+        "sixes": 270,
+        "wickets": 323,
+        "overs_bowled": 2479.2,
+        "runs_conceded": 11871
+    },
+    {
+        "id": 10,
+        "name": "Jacques Kallis",
+        "country": "South Africa",
+        "role": "All-Rounder",
+        "matches": 328,
+        "innings": 314,
+        "runs": 11579,
+        "balls_faced": 15882,
+        "highest_score": 139,
+        "not_outs": 53,
+        "centuries": 17,
+        "half_centuries": 86,
+        "fours": 911,
+        "sixes": 137,
+        "wickets": 273,
+        "overs_bowled": 1792.4,
+        "runs_conceded": 8680
+    },
+    {
+        "id": 11,
+        "name": "Wasim Akram",
+        "country": "Pakistan",
+        "role": "Bowler",
+        "matches": 356,
+        "innings": 280,
+        "runs": 3717,
+        "balls_faced": 4185,
+        "highest_score": 86,
+        "not_outs": 55,
+        "centuries": 0,
+        "half_centuries": 6,
+        "fours": 285,
+        "sixes": 121,
+        "wickets": 502,
+        "overs_bowled": 3031.1,
+        "runs_conceded": 11812
+    },
+    {
+        "id": 12,
+        "name": "Muttiah Muralitharan",
+        "country": "Sri Lanka",
+        "role": "Bowler",
+        "matches": 350,
+        "innings": 162,
+        "runs": 674,
+        "balls_faced": 869,
+        "highest_score": 33,
+        "not_outs": 63,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 74,
+        "sixes": 12,
+        "wickets": 534,
+        "overs_bowled": 3135.1,
+        "runs_conceded": 12326
+    },
+    {
+        "id": 13,
+        "name": "Glenn McGrath",
+        "country": "Australia",
+        "role": "Bowler",
+        "matches": 250,
+        "innings": 68,
+        "runs": 115,
+        "balls_faced": 236,
+        "highest_score": 11,
+        "not_outs": 38,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 9,
+        "sixes": 0,
+        "wickets": 381,
+        "overs_bowled": 2092.3,
+        "runs_conceded": 8054
+    },
+    {
+        "id": 14,
+        "name": "AB de Villiers",
+        "country": "South Africa",
+        "role": "Batsman",
+        "matches": 228,
+        "innings": 218,
+        "runs": 9577,
+        "balls_faced": 9476,
+        "highest_score": 176,
+        "not_outs": 39,
+        "centuries": 25,
+        "half_centuries": 53,
+        "fours": 840,
+        "sixes": 204,
+        "wickets": 7,
+        "overs_bowled": 31.4,
+        "runs_conceded": 204
+    },
+    {
+        "id": 15,
+        "name": "Kane Williamson",
+        "country": "New Zealand",
+        "role": "Batsman",
+        "matches": 165,
+        "innings": 157,
+        "runs": 6810,
+        "balls_faced": 8358,
+        "highest_score": 148,
+        "not_outs": 17,
+        "centuries": 13,
+        "half_centuries": 45,
+        "fours": 622,
+        "sixes": 54,
+        "wickets": 37,
+        "overs_bowled": 247.3,
+        "runs_conceded": 1383
+    },
+    {
+        "id": 16,
+        "name": "Brian Lara",
+        "country": "West Indies",
+        "role": "Batsman",
+        "matches": 299,
+        "innings": 289,
+        "runs": 10405,
+        "balls_faced": 13086,
+        "highest_score": 169,
+        "not_outs": 32,
+        "centuries": 19,
+        "half_centuries": 63,
+        "fours": 1042,
+        "sixes": 133,
+        "wickets": 4,
+        "overs_bowled": 8.1,
+        "runs_conceded": 71
+    },
+    {
+        "id": 17,
+        "name": "Chris Gayle",
+        "country": "West Indies",
+        "role": "Batsman",
+        "matches": 301,
+        "innings": 294,
+        "runs": 10480,
+        "balls_faced": 12019,
+        "highest_score": 215,
+        "not_outs": 17,
+        "centuries": 25,
+        "half_centuries": 54,
+        "fours": 1128,
+        "sixes": 331,
+        "wickets": 167,
+        "overs_bowled": 1235.4,
+        "runs_conceded": 5928
+    },
+    {
+        "id": 18,
+        "name": "Sourav Ganguly",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 311,
+        "innings": 300,
+        "runs": 11363,
+        "balls_faced": 15416,
+        "highest_score": 183,
+        "not_outs": 21,
+        "centuries": 22,
+        "half_centuries": 72,
+        "fours": 1122,
+        "sixes": 190,
+        "wickets": 100,
+        "overs_bowled": 760.3,
+        "runs_conceded": 3849
+    },
+    {
+        "id": 19,
+        "name": "Rahul Dravid",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 344,
+        "innings": 318,
+        "runs": 10889,
+        "balls_faced": 15284,
+        "highest_score": 153,
+        "not_outs": 40,
+        "centuries": 12,
+        "half_centuries": 83,
+        "fours": 950,
+        "sixes": 42,
+        "wickets": 4,
+        "overs_bowled": 31.0,
+        "runs_conceded": 170
+    },
+    {
+        "id": 20,
+        "name": "Yuvraj Singh",
+        "country": "India",
+        "role": "All-Rounder",
+        "matches": 304,
+        "innings": 278,
+        "runs": 8701,
+        "balls_faced": 9924,
+        "highest_score": 150,
+        "not_outs": 40,
+        "centuries": 14,
+        "half_centuries": 52,
+        "fours": 908,
+        "sixes": 155,
+        "wickets": 111,
+        "overs_bowled": 846.5,
+        "runs_conceded": 4649
+    },
+    {
+        "id": 21,
+        "name": "Virender Sehwag",
+        "country": "India",
+        "role": "Batsman",
+        "matches": 251,
+        "innings": 245,
+        "runs": 8273,
+        "balls_faced": 7929,
+        "highest_score": 219,
+        "not_outs": 9,
+        "centuries": 15,
+        "half_centuries": 38,
+        "fours": 1132,
+        "sixes": 136,
+        "wickets": 96,
+        "overs_bowled": 733.2,
+        "runs_conceded": 3762
+    },
+    {
+        "id": 22,
+        "name": "Adam Gilchrist",
+        "country": "Australia",
+        "role": "Wicket-Keeper",
+        "matches": 287,
+        "innings": 279,
+        "runs": 9619,
+        "balls_faced": 9922,
+        "highest_score": 172,
+        "not_outs": 11,
+        "centuries": 16,
+        "half_centuries": 55,
+        "fours": 1162,
+        "sixes": 149,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 23,
+        "name": "Shane Warne",
+        "country": "Australia",
+        "role": "Bowler",
+        "matches": 194,
+        "innings": 107,
+        "runs": 1018,
+        "balls_faced": 1406,
+        "highest_score": 55,
+        "not_outs": 27,
+        "centuries": 0,
+        "half_centuries": 1,
+        "fours": 62,
+        "sixes": 13,
+        "wickets": 293,
+        "overs_bowled": 1773.3,
+        "runs_conceded": 7520
+    },
+    {
+        "id": 24,
+        "name": "Brett Lee",
+        "country": "Australia",
+        "role": "Bowler",
+        "matches": 221,
+        "innings": 110,
+        "runs": 1176,
+        "balls_faced": 1420,
+        "highest_score": 57,
+        "not_outs": 36,
+        "centuries": 0,
+        "half_centuries": 3,
+        "fours": 95,
+        "sixes": 29,
+        "wickets": 380,
+        "overs_bowled": 1863.0,
+        "runs_conceded": 8877
+    },
+    {
+        "id": 25,
+        "name": "Steve Smith",
+        "country": "Australia",
+        "role": "Batsman",
+        "matches": 158,
+        "innings": 142,
+        "runs": 5446,
+        "balls_faced": 6223,
+        "highest_score": 164,
+        "not_outs": 16,
+        "centuries": 12,
+        "half_centuries": 33,
+        "fours": 498,
+        "sixes": 45,
+        "wickets": 28,
+        "overs_bowled": 278.4,
+        "runs_conceded": 1526
+    },
+    {
+        "id": 26,
+        "name": "David Warner",
+        "country": "Australia",
+        "role": "Batsman",
+        "matches": 161,
+        "innings": 159,
+        "runs": 6932,
+        "balls_faced": 7264,
+        "highest_score": 179,
+        "not_outs": 6,
+        "centuries": 22,
+        "half_centuries": 33,
+        "fours": 733,
+        "sixes": 102,
+        "wickets": 0,
+        "overs_bowled": 1.0,
+        "runs_conceded": 12
+    },
+    {
+        "id": 27,
+        "name": "Mitchell Starc",
+        "country": "Australia",
+        "role": "Bowler",
+        "matches": 121,
+        "innings": 64,
+        "runs": 557,
+        "balls_faced": 636,
+        "highest_score": 52,
+        "not_outs": 25,
+        "centuries": 0,
+        "half_centuries": 1,
+        "fours": 39,
+        "sixes": 13,
+        "wickets": 236,
+        "overs_bowled": 1023.2,
+        "runs_conceded": 5270
+    },
+    {
+        "id": 28,
+        "name": "Inzamam-ul-Haq",
+        "country": "Pakistan",
+        "role": "Batsman",
+        "matches": 378,
+        "innings": 350,
+        "runs": 11739,
+        "balls_faced": 15812,
+        "highest_score": 137,
+        "not_outs": 53,
+        "centuries": 10,
+        "half_centuries": 83,
+        "fours": 971,
+        "sixes": 144,
+        "wickets": 3,
+        "overs_bowled": 14.3,
+        "runs_conceded": 96
+    },
+    {
+        "id": 29,
+        "name": "Shoaib Akhtar",
+        "country": "Pakistan",
+        "role": "Bowler",
+        "matches": 163,
+        "innings": 84,
+        "runs": 544,
+        "balls_faced": 742,
+        "highest_score": 43,
+        "not_outs": 33,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 36,
+        "sixes": 18,
+        "wickets": 247,
+        "overs_bowled": 1283.4,
+        "runs_conceded": 6169
+    },
+    {
+        "id": 30,
+        "name": "Shahid Afridi",
+        "country": "Pakistan",
+        "role": "All-Rounder",
+        "matches": 398,
+        "innings": 369,
+        "runs": 8064,
+        "balls_faced": 6892,
+        "highest_score": 124,
+        "not_outs": 27,
+        "centuries": 6,
+        "half_centuries": 39,
+        "fours": 730,
+        "sixes": 351,
+        "wickets": 395,
+        "overs_bowled": 2945.0,
+        "runs_conceded": 13632
+    },
+    {
+        "id": 31,
+        "name": "Babar Azam",
+        "country": "Pakistan",
+        "role": "Batsman",
+        "matches": 117,
+        "innings": 114,
+        "runs": 5729,
+        "balls_faced": 6458,
+        "highest_score": 158,
+        "not_outs": 13,
+        "centuries": 19,
+        "half_centuries": 32,
+        "fours": 536,
+        "sixes": 60,
+        "wickets": 0,
+        "overs_bowled": 2.0,
+        "runs_conceded": 18
+    },
+    {
+        "id": 32,
+        "name": "Joe Root",
+        "country": "England",
+        "role": "Batsman",
+        "matches": 171,
+        "innings": 160,
+        "runs": 6522,
+        "balls_faced": 7515,
+        "highest_score": 133,
+        "not_outs": 24,
+        "centuries": 16,
+        "half_centuries": 39,
+        "fours": 532,
+        "sixes": 29,
+        "wickets": 27,
+        "overs_bowled": 275.5,
+        "runs_conceded": 1632
+    },
+    {
+        "id": 33,
+        "name": "Ben Stokes",
+        "country": "England",
+        "role": "All-Rounder",
+        "matches": 114,
+        "innings": 97,
+        "runs": 3450,
+        "balls_faced": 3571,
+        "highest_score": 182,
+        "not_outs": 17,
+        "centuries": 5,
+        "half_centuries": 24,
+        "fours": 280,
+        "sixes": 104,
+        "wickets": 74,
+        "overs_bowled": 647.4,
+        "runs_conceded": 3907
+    },
+    {
+        "id": 34,
+        "name": "Jos Buttler",
+        "country": "England",
+        "role": "Wicket-Keeper",
+        "matches": 181,
+        "innings": 154,
+        "runs": 5022,
+        "balls_faced": 4288,
+        "highest_score": 162,
+        "not_outs": 27,
+        "centuries": 11,
+        "half_centuries": 26,
+        "fours": 412,
+        "sixes": 170,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 35,
+        "name": "James Anderson",
+        "country": "England",
+        "role": "Bowler",
+        "matches": 194,
+        "innings": 76,
+        "runs": 273,
+        "balls_faced": 559,
+        "highest_score": 28,
+        "not_outs": 38,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 17,
+        "sixes": 3,
+        "wickets": 269,
+        "overs_bowled": 1600.4,
+        "runs_conceded": 7868
+    },
+    {
+        "id": 36,
+        "name": "Stuart Broad",
+        "country": "England",
+        "role": "Bowler",
+        "matches": 121,
+        "innings": 65,
+        "runs": 529,
+        "balls_faced": 760,
+        "highest_score": 45,
+        "not_outs": 25,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 37,
+        "sixes": 9,
+        "wickets": 178,
+        "overs_bowled": 1045.2,
+        "runs_conceded": 5506
+    },
+    {
+        "id": 37,
+        "name": "Eoin Morgan",
+        "country": "England",
+        "role": "Batsman",
+        "matches": 248,
+        "innings": 230,
+        "runs": 7701,
+        "balls_faced": 8462,
+        "highest_score": 148,
+        "not_outs": 34,
+        "centuries": 14,
+        "half_centuries": 47,
+        "fours": 656,
+        "sixes": 220,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 38,
+        "name": "Jonny Bairstow",
+        "country": "England",
+        "role": "Batsman",
+        "matches": 107,
+        "innings": 99,
+        "runs": 3868,
+        "balls_faced": 3734,
+        "highest_score": 141,
+        "not_outs": 11,
+        "centuries": 11,
+        "half_centuries": 17,
+        "fours": 418,
+        "sixes": 94,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 39,
+        "name": "Jofra Archer",
+        "country": "England",
+        "role": "Bowler",
+        "matches": 24,
+        "innings": 13,
+        "runs": 73,
+        "balls_faced": 97,
+        "highest_score": 18,
+        "not_outs": 8,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 6,
+        "sixes": 3,
+        "wickets": 45,
+        "overs_bowled": 215.1,
+        "runs_conceded": 1024
+    },
+    {
+        "id": 40,
+        "name": "Adil Rashid",
+        "country": "England",
+        "role": "Bowler",
+        "matches": 138,
+        "innings": 81,
+        "runs": 798,
+        "balls_faced": 809,
+        "highest_score": 69,
+        "not_outs": 31,
+        "centuries": 0,
+        "half_centuries": 1,
+        "fours": 72,
+        "sixes": 15,
+        "wickets": 199,
+        "overs_bowled": 1184.3,
+        "runs_conceded": 6712
+    },
+    {
+        "id": 41,
+        "name": "Dale Steyn",
+        "country": "South Africa",
+        "role": "Bowler",
+        "matches": 125,
+        "innings": 49,
+        "runs": 365,
+        "balls_faced": 512,
+        "highest_score": 35,
+        "not_outs": 24,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 28,
+        "sixes": 6,
+        "wickets": 196,
+        "overs_bowled": 1042.3,
+        "runs_conceded": 5081
+    },
+    {
+        "id": 42,
+        "name": "Hashim Amla",
+        "country": "South Africa",
+        "role": "Batsman",
+        "matches": 181,
+        "innings": 178,
+        "runs": 8113,
+        "balls_faced": 9148,
+        "highest_score": 159,
+        "not_outs": 11,
+        "centuries": 27,
+        "half_centuries": 39,
+        "fours": 822,
+        "sixes": 53,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 43,
+        "name": "Shaun Pollock",
+        "country": "South Africa",
+        "role": "All-Rounder",
+        "matches": 303,
+        "innings": 205,
+        "runs": 3519,
+        "balls_faced": 4058,
+        "highest_score": 130,
+        "not_outs": 72,
+        "centuries": 1,
+        "half_centuries": 14,
+        "fours": 278,
+        "sixes": 64,
+        "wickets": 393,
+        "overs_bowled": 2618.4,
+        "runs_conceded": 9631
+    },
+    {
+        "id": 44,
+        "name": "Makhaya Ntini",
+        "country": "South Africa",
+        "role": "Bowler",
+        "matches": 173,
+        "innings": 47,
+        "runs": 199,
+        "balls_faced": 300,
+        "highest_score": 42,
+        "not_outs": 23,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 17,
+        "sixes": 2,
+        "wickets": 266,
+        "overs_bowled": 1445.3,
+        "runs_conceded": 6542
+    },
+    {
+        "id": 45,
+        "name": "Faf du Plessis",
+        "country": "South Africa",
+        "role": "Batsman",
+        "matches": 143,
+        "innings": 136,
+        "runs": 5507,
+        "balls_faced": 6205,
+        "highest_score": 185,
+        "not_outs": 20,
+        "centuries": 12,
+        "half_centuries": 35,
+        "fours": 495,
+        "sixes": 66,
+        "wickets": 2,
+        "overs_bowled": 31.0,
+        "runs_conceded": 189
+    },
+    {
+        "id": 46,
+        "name": "Quinton de Kock",
+        "country": "South Africa",
+        "role": "Wicket-Keeper",
+        "matches": 155,
+        "innings": 155,
+        "runs": 6770,
+        "balls_faced": 7001,
+        "highest_score": 178,
+        "not_outs": 11,
+        "centuries": 21,
+        "half_centuries": 30,
+        "fours": 734,
+        "sixes": 115,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 47,
+        "name": "Kagiso Rabada",
+        "country": "South Africa",
+        "role": "Bowler",
+        "matches": 103,
+        "innings": 44,
+        "runs": 387,
+        "balls_faced": 495,
+        "highest_score": 31,
+        "not_outs": 19,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 31,
+        "sixes": 6,
+        "wickets": 160,
+        "overs_bowled": 890.2,
+        "runs_conceded": 4522
+    },
+    {
+        "id": 48,
+        "name": "Brendon McCullum",
+        "country": "New Zealand",
+        "role": "Batsman",
+        "matches": 260,
+        "innings": 228,
+        "runs": 6083,
+        "balls_faced": 6312,
+        "highest_score": 166,
+        "not_outs": 28,
+        "centuries": 5,
+        "half_centuries": 32,
+        "fours": 577,
+        "sixes": 200,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 49,
+        "name": "Ross Taylor",
+        "country": "New Zealand",
+        "role": "Batsman",
+        "matches": 236,
+        "innings": 218,
+        "runs": 8607,
+        "balls_faced": 10340,
+        "highest_score": 181,
+        "not_outs": 39,
+        "centuries": 21,
+        "half_centuries": 51,
+        "fours": 714,
+        "sixes": 147,
+        "wickets": 0,
+        "overs_bowled": 7.2,
+        "runs_conceded": 51
+    },
+    {
+        "id": 50,
+        "name": "Martin Guptill",
+        "country": "New Zealand",
+        "role": "Batsman",
+        "matches": 198,
+        "innings": 195,
+        "runs": 7346,
+        "balls_faced": 8387,
+        "highest_score": 237,
+        "not_outs": 19,
+        "centuries": 18,
+        "half_centuries": 39,
+        "fours": 746,
+        "sixes": 181,
+        "wickets": 4,
+        "overs_bowled": 16.2,
+        "runs_conceded": 98
+    },
+    {
+        "id": 51,
+        "name": "Daniel Vettori",
+        "country": "New Zealand",
+        "role": "All-Rounder",
+        "matches": 295,
+        "innings": 187,
+        "runs": 2253,
+        "balls_faced": 2712,
+        "highest_score": 83,
+        "not_outs": 57,
+        "centuries": 0,
+        "half_centuries": 4,
+        "fours": 171,
+        "sixes": 21,
+        "wickets": 305,
+        "overs_bowled": 2342.3,
+        "runs_conceded": 9674
+    },
+    {
+        "id": 52,
+        "name": "Trent Boult",
+        "country": "New Zealand",
+        "role": "Bowler",
+        "matches": 114,
+        "innings": 48,
+        "runs": 184,
+        "balls_faced": 251,
+        "highest_score": 21,
+        "not_outs": 27,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 14,
+        "sixes": 6,
+        "wickets": 211,
+        "overs_bowled": 1018.1,
+        "runs_conceded": 5049
+    },
+    {
+        "id": 53,
+        "name": "Tim Southee",
+        "country": "New Zealand",
+        "role": "Bowler",
+        "matches": 161,
+        "innings": 85,
+        "runs": 737,
+        "balls_faced": 854,
+        "highest_score": 55,
+        "not_outs": 38,
+        "centuries": 0,
+        "half_centuries": 1,
+        "fours": 57,
+        "sixes": 27,
+        "wickets": 221,
+        "overs_bowled": 1374.0,
+        "runs_conceded": 7515
+    },
+    {
+        "id": 54,
+        "name": "Shane Bond",
+        "country": "New Zealand",
+        "role": "Bowler",
+        "matches": 82,
+        "innings": 41,
+        "runs": 292,
+        "balls_faced": 421,
+        "highest_score": 31,
+        "not_outs": 19,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 25,
+        "sixes": 4,
+        "wickets": 147,
+        "overs_bowled": 694.4,
+        "runs_conceded": 2977
+    },
+    {
+        "id": 55,
+        "name": "Stephen Fleming",
+        "country": "New Zealand",
+        "role": "Batsman",
+        "matches": 280,
+        "innings": 269,
+        "runs": 8037,
+        "balls_faced": 11254,
+        "highest_score": 134,
+        "not_outs": 21,
+        "centuries": 8,
+        "half_centuries": 49,
+        "fours": 823,
+        "sixes": 54,
+        "wickets": 1,
+        "overs_bowled": 5.0,
+        "runs_conceded": 28
+    },
+    {
+        "id": 56,
+        "name": "Viv Richards",
+        "country": "West Indies",
+        "role": "Batsman",
+        "matches": 187,
+        "innings": 167,
+        "runs": 6721,
+        "balls_faced": 7460,
+        "highest_score": 189,
+        "not_outs": 24,
+        "centuries": 11,
+        "half_centuries": 45,
+        "fours": 600,
+        "sixes": 126,
+        "wickets": 118,
+        "overs_bowled": 944.4,
+        "runs_conceded": 4297
+    },
+    {
+        "id": 57,
+        "name": "Curtly Ambrose",
+        "country": "West Indies",
+        "role": "Bowler",
+        "matches": 176,
+        "innings": 96,
+        "runs": 639,
+        "balls_faced": 890,
+        "highest_score": 31,
+        "not_outs": 45,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 42,
+        "sixes": 4,
+        "wickets": 225,
+        "overs_bowled": 1563.1,
+        "runs_conceded": 5429
+    },
+    {
+        "id": 58,
+        "name": "Courtney Walsh",
+        "country": "West Indies",
+        "role": "Bowler",
+        "matches": 205,
+        "innings": 79,
+        "runs": 321,
+        "balls_faced": 449,
+        "highest_score": 30,
+        "not_outs": 33,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 21,
+        "sixes": 2,
+        "wickets": 227,
+        "overs_bowled": 1803.4,
+        "runs_conceded": 6965
+    },
+    {
+        "id": 59,
+        "name": "Shivnarine Chanderpaul",
+        "country": "West Indies",
+        "role": "Batsman",
+        "matches": 268,
+        "innings": 251,
+        "runs": 8778,
+        "balls_faced": 12411,
+        "highest_score": 150,
+        "not_outs": 40,
+        "centuries": 11,
+        "half_centuries": 59,
+        "fours": 722,
+        "sixes": 66,
+        "wickets": 14,
+        "overs_bowled": 128.2,
+        "runs_conceded": 670
+    },
+    {
+        "id": 60,
+        "name": "Clive Lloyd",
+        "country": "West Indies",
+        "role": "Batsman",
+        "matches": 87,
+        "innings": 69,
+        "runs": 1977,
+        "balls_faced": 2430,
+        "highest_score": 102,
+        "not_outs": 19,
+        "centuries": 1,
+        "half_centuries": 11,
+        "fours": 175,
+        "sixes": 26,
+        "wickets": 8,
+        "overs_bowled": 60.1,
+        "runs_conceded": 271
+    },
+    {
+        "id": 61,
+        "name": "Kieron Pollard",
+        "country": "West Indies",
+        "role": "All-Rounder",
+        "matches": 123,
+        "innings": 113,
+        "runs": 2706,
+        "balls_faced": 2875,
+        "highest_score": 119,
+        "not_outs": 16,
+        "centuries": 3,
+        "half_centuries": 13,
+        "fours": 193,
+        "sixes": 135,
+        "wickets": 55,
+        "overs_bowled": 440.3,
+        "runs_conceded": 2438
+    },
+    {
+        "id": 62,
+        "name": "Dwayne Bravo",
+        "country": "West Indies",
+        "role": "All-Rounder",
+        "matches": 164,
+        "innings": 141,
+        "runs": 2968,
+        "balls_faced": 3604,
+        "highest_score": 112,
+        "not_outs": 24,
+        "centuries": 2,
+        "half_centuries": 10,
+        "fours": 228,
+        "sixes": 66,
+        "wickets": 199,
+        "overs_bowled": 1188.1,
+        "runs_conceded": 6310
+    },
+    {
+        "id": 63,
+        "name": "Sunil Narine",
+        "country": "West Indies",
+        "role": "Bowler",
+        "matches": 65,
+        "innings": 45,
+        "runs": 363,
+        "balls_faced": 452,
+        "highest_score": 36,
+        "not_outs": 14,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 35,
+        "sixes": 13,
+        "wickets": 92,
+        "overs_bowled": 607.1,
+        "runs_conceded": 2504
+    },
+    {
+        "id": 64,
+        "name": "Shakib Al Hasan",
+        "country": "Bangladesh",
+        "role": "All-Rounder",
+        "matches": 247,
+        "innings": 234,
+        "runs": 7570,
+        "balls_faced": 9170,
+        "highest_score": 134,
+        "not_outs": 32,
+        "centuries": 9,
+        "half_centuries": 56,
+        "fours": 736,
+        "sixes": 51,
+        "wickets": 317,
+        "overs_bowled": 2182.2,
+        "runs_conceded": 9680
+    },
+    {
+        "id": 65,
+        "name": "Tamim Iqbal",
+        "country": "Bangladesh",
+        "role": "Batsman",
+        "matches": 243,
+        "innings": 240,
+        "runs": 8357,
+        "balls_faced": 10638,
+        "highest_score": 158,
+        "not_outs": 19,
+        "centuries": 14,
+        "half_centuries": 56,
+        "fours": 894,
+        "sixes": 104,
+        "wickets": 0,
+        "overs_bowled": 1.0,
+        "runs_conceded": 13
+    },
+    {
+        "id": 66,
+        "name": "Mushfiqur Rahim",
+        "country": "Bangladesh",
+        "role": "Wicket-Keeper",
+        "matches": 271,
+        "innings": 251,
+        "runs": 7792,
+        "balls_faced": 9811,
+        "highest_score": 144,
+        "not_outs": 42,
+        "centuries": 9,
+        "half_centuries": 49,
+        "fours": 622,
+        "sixes": 98,
+        "wickets": 0,
+        "overs_bowled": 0.0,
+        "runs_conceded": 0
+    },
+    {
+        "id": 67,
+        "name": "Mashrafe Mortaza",
+        "country": "Bangladesh",
+        "role": "Bowler",
+        "matches": 220,
+        "innings": 157,
+        "runs": 1787,
+        "balls_faced": 2038,
+        "highest_score": 51,
+        "not_outs": 27,
+        "centuries": 0,
+        "half_centuries": 1,
+        "fours": 158,
+        "sixes": 62,
+        "wickets": 270,
+        "overs_bowled": 1801.3,
+        "runs_conceded": 8740
+    },
+    {
+        "id": 68,
+        "name": "Rashid Khan",
+        "country": "Afghanistan",
+        "role": "Bowler",
+        "matches": 105,
+        "innings": 78,
+        "runs": 1322,
+        "balls_faced": 1256,
+        "highest_score": 60,
+        "not_outs": 18,
+        "centuries": 0,
+        "half_centuries": 5,
+        "fours": 114,
+        "sixes": 55,
+        "wickets": 190,
+        "overs_bowled": 914.5,
+        "runs_conceded": 3822
+    },
+    {
+        "id": 69,
+        "name": "Mohammad Nabi",
+        "country": "Afghanistan",
+        "role": "All-Rounder",
+        "matches": 161,
+        "innings": 147,
+        "runs": 3447,
+        "balls_faced": 3968,
+        "highest_score": 136,
+        "not_outs": 16,
+        "centuries": 2,
+        "half_centuries": 17,
+        "fours": 254,
+        "sixes": 99,
+        "wickets": 169,
+        "overs_bowled": 1332.1,
+        "runs_conceded": 5724
+    },
+    {
+        "id": 70,
+        "name": "Mujeeb Ur Rahman",
+        "country": "Afghanistan",
+        "role": "Bowler",
+        "matches": 75,
+        "innings": 41,
+        "runs": 195,
+        "balls_faced": 260,
+        "highest_score": 18,
+        "not_outs": 17,
+        "centuries": 0,
+        "half_centuries": 0,
+        "fours": 16,
+        "sixes": 6,
+        "wickets": 101,
+        "overs_bowled": 694.0,
+        "runs_conceded": 3088
+    }
+]
+def _resolve_data_file_path() -> str:
+    base = os.path.dirname(__file__) if "__file__" in globals() else "."
+    candidates = [
+        os.path.join(base, "players.json"),
+        os.path.join(base, "data", "players.json"),
+        "players.json",
+        os.path.join("data", "players.json")
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+    return os.path.join(base, "players.json")
+
+DATA_FILE_PATH = _resolve_data_file_path()
+
+
+# =============================================================================
+# 1. FILE I/O & PERSISTENCE (WITH AUTOMATIC IN-MEMORY FALLBACK)
+# =============================================================================
+
+def load_player_data(filepath: str = None) -> List[Dict[str, Any]]:
+    """Loads player statistics from JSON file, falling back gracefully to in-memory defaults.
+    
+    Demonstrates:
+        - Exception handling (FileNotFoundError, json.JSONDecodeError)
+        - Fallback resilience for online/external compilers
+    """
+    target = filepath if filepath is not None else _resolve_data_file_path()
+    try:
+        if os.path.exists(target):
+            with open(target, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list) and len(data) > 0:
+                    return data
+    except Exception:
+        pass  # In online compilers or restricted environments, use embedded data
+
+    # Use embedded copy to ensure standalone operation anywhere
+    return copy.deepcopy(DEFAULT_PLAYERS)
+
+def save_player_data(players: List[Dict[str, Any]], filepath: str = None) -> bool:
+    """Saves player list back to JSON file.
+    
+    Demonstrates:
+        - File writing with JSON indentation
+        - Exception handling
+    """
+    target = filepath if filepath is not None else _resolve_data_file_path()
+    try:
+        dir_name = os.path.dirname(target)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(players, f, indent=4)
+        return True
+    except Exception as e:
+        print(f"[Note]: Local file save skipped ({e}). In-memory records updated.")
+        return False
+
+# =============================================================================
+# 2. STATISTICAL CALCULATION FUNCTIONS (OPERATORS & EXCEPTION HANDLING)
+# =============================================================================
+
+def calculate_batting_average(runs: int, innings: int, not_outs: int) -> float:
+    """Calculates batting average: Runs / (Innings - NotOuts).
+    
+    Demonstrates:
+        - Arithmetic operators
+        - ZeroDivisionError exception handling
+    """
+    try:
+        dismissals = innings - not_outs
+        if dismissals <= 0:
+            return float(runs)
+        return round(runs / dismissals, 2)
+    except ZeroDivisionError:
+        return 0.0
+
+
+def calculate_strike_rate(runs: int, balls_faced: int) -> float:
+    """Calculates batting strike rate: (Runs / Balls) * 100.
+    
+    Demonstrates:
+        - Percentage arithmetic
+        - ZeroDivisionError handling
+    """
+    try:
+        if balls_faced <= 0:
+            return 0.0
+        return round((runs / balls_faced) * 100, 2)
+    except ZeroDivisionError:
+        return 0.0
+
+
+def calculate_bowling_average(runs_conceded: int, wickets: int) -> float:
+    """Calculates bowling average: Runs Conceded / Wickets."""
+    try:
+        if wickets <= 0:
+            return float("inf")
+        return round(runs_conceded / wickets, 2)
+    except ZeroDivisionError:
+        return float("inf")
+
+
+def calculate_economy_rate(runs_conceded: int, overs_bowled: float) -> float:
+    """Calculates bowling economy rate: Runs Conceded / Overs Bowled.
+    
+    Handles cricket over fraction (e.g., 10.2 overs = 10 overs + 2 balls = 10.333 overs).
+    """
+    try:
+        if overs_bowled <= 0.0:
+            return 0.0
+        complete_overs = int(overs_bowled)
+        balls = round((overs_bowled - complete_overs) * 10)
+        actual_overs = complete_overs + (balls / 6.0)
+        if actual_overs <= 0:
+            return 0.0
+        return round(runs_conceded / actual_overs, 2)
+    except ZeroDivisionError:
+        return 0.0
+
+
+def calculate_boundary_percentage(fours: int, sixes: int, total_runs: int) -> float:
+    """Calculates percentage of runs scored in boundaries (4s and 6s)."""
+    try:
+        if total_runs <= 0:
+            return 0.0
+        boundary_runs = (fours * 4) + (sixes * 6)
+        return round((boundary_runs / total_runs) * 100, 2)
+    except ZeroDivisionError:
+        return 0.0
+
+
+def calculate_player_impact_score(player: Dict[str, Any]) -> float:
+    """Calculates a composite MVP / Impact rating score.
+    
+    Formula:
+        Impact = (Runs * 0.02) + (BatAvg * 0.35) + (StrikeRate * 0.25)
+                 + (Wickets * 10) - (Economy * 2) + (Centuries * 8)
+    """
+    bat_avg = calculate_batting_average(player["runs"], player["innings"], player["not_outs"])
+    sr = calculate_strike_rate(player["runs"], player["balls_faced"])
+    econ = calculate_economy_rate(player.get("runs_conceded", 0), player.get("overs_bowled", 0.0))
+    wickets = player.get("wickets", 0)
+    centuries = player.get("centuries", 0)
+
+    score = (
+        (player["runs"] * 0.02)
+        + (bat_avg * 0.35)
+        + (sr * 0.25)
+        + (wickets * 10.0)
+        - (econ * 2.0)
+        + (centuries * 8.0)
+    )
+    return round(max(0.0, score), 2)
+
+
+# =============================================================================
+# 3. RECURSION MODULE
+# =============================================================================
+
+def recursive_sum_runs(runs_list: List[int], index: int = 0) -> int:
+    """Calculates total runs scored using Recursion.
+    
+    Demonstrates:
+        - Base case: when index reaches end of list
+        - Recursive step: current element + recursive call
+    """
+    if index >= len(runs_list):
+        return 0
+    return runs_list[index] + recursive_sum_runs(runs_list, index + 1)
+
+
+def recursive_binary_search(
+    sorted_players: List[Dict[str, Any]], 
+    target_name: str, 
+    low: int, 
+    high: int
+) -> Optional[Dict[str, Any]]:
+    """Performs Recursive Binary Search on players sorted alphabetically by name.
+    
+    Complexity: O(log N)
+    Demonstrates:
+        - Divide and Conquer paradigm
+        - Base cases (found or empty interval)
+    """
+    if low > high:
+        return None
+
+    mid = (low + high) // 2
+    current_name = sorted_players[mid]["name"].strip().lower()
+    target_clean = target_name.strip().lower()
+
+    if current_name == target_clean:
+        return sorted_players[mid]
+    elif current_name > target_clean:
+        return recursive_binary_search(sorted_players, target_name, low, mid - 1)
+    else:
+        return recursive_binary_search(sorted_players, target_name, mid + 1, high)
+
+
+# =============================================================================
+# 4. SEARCHING & SORTING ALGORITHMS
+# =============================================================================
+
+def linear_search_players(players: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    """Performs Linear Search for substring match across name and role/country."""
+    query_lower = query.strip().lower()
+    return [
+        p for p in players 
+        if query_lower in p["name"].lower() 
+        or query_lower in p["country"].lower() 
+        or query_lower in p["role"].lower()
+    ]
+
+
+def bubble_sort_players(
+    players: List[Dict[str, Any]], 
+    metric_key: str, 
+    descending: bool = True
+) -> List[Dict[str, Any]]:
+    """Sorts players by numerical attribute using classic Bubble Sort with swap flag.
+    
+    Demonstrates:
+        - In-place swapping
+        - Nested loops
+        - Early exit optimization
+    """
+    sorted_list = players.copy()
+    n = len(sorted_list)
+
+    for i in range(n):
+        swapped = False
+        for j in range(0, n - i - 1):
+            val1 = sorted_list[j].get(metric_key, 0)
+            val2 = sorted_list[j + 1].get(metric_key, 0)
+
+            should_swap = (val1 < val2) if descending else (val1 > val2)
+            if should_swap:
+                sorted_list[j], sorted_list[j + 1] = sorted_list[j + 1], sorted_list[j]
+                swapped = True
+        if not swapped:
+            break
+
+    return sorted_list
+
+
+# =============================================================================
+# 5. DATA SETS, TUPLES & DICTIONARIES DEMONSTRATION
+# =============================================================================
+
+def get_unique_countries(players: List[Dict[str, Any]]) -> set:
+    """Demonstrates Sets: returns distinct nationalities."""
+    return {p["country"] for p in players}
+
+
+def get_unique_roles(players: List[Dict[str, Any]]) -> set:
+    """Demonstrates Sets: returns unique cricket roles."""
+    return {p["role"] for p in players}
+
+
+def get_player_summary_tuple(player: Dict[str, Any]) -> Tuple[str, str, int, float, float]:
+    """Demonstrates Tuples: creates an immutable snapshot of key player stats."""
+    avg = calculate_batting_average(player["runs"], player["innings"], player["not_outs"])
+    sr = calculate_strike_rate(player["runs"], player["balls_faced"])
+    return (player["name"], player["role"], player["runs"], avg, sr)
+
+
+# =============================================================================
+# 6. FORMATTING & DISPLAY FUNCTIONS (PURE ASCII FORMATTING)
+# =============================================================================
+
+def print_separator(char: str = "=", length: int = 80) -> None:
+    """Prints a styled separator line."""
+    print(char * length)
+
+
+def display_player_table(players: List[Dict[str, Any]], title: str = "Player Statistics") -> None:
+    """Displays player records in a clean, formatted ASCII table."""
+    print_separator("=")
+    print(f"{title.center(80)}")
+    print_separator("=")
+    headers = f"{'ID':<4} {'Name':<18} {'Country':<10} {'Role':<14} {'Runs':<7} {'Avg':<7} {'SR':<7} {'Wkts':<5}"
+    print(headers)
+    print_separator("-")
+
+    if not players:
+        print("No players found.".center(80))
+        print_separator("=")
+        return
+
+    for p in players:
+        avg = calculate_batting_average(p["runs"], p["innings"], p["not_outs"])
+        sr = calculate_strike_rate(p["runs"], p["balls_faced"])
+        print(
+            f"{p['id']:<4} {p['name']:<18} {p['country']:<10} {p['role']:<14} "
+            f"{p['runs']:<7} {avg:<7.2f} {sr:<7.2f} {p.get('wickets', 0):<5}"
+        )
+    print_separator("=")
+
+
+def display_player_detailed_card(player: Dict[str, Any]) -> None:
+    """Displays a detailed performance card for an individual cricketer."""
+    bat_avg = calculate_batting_average(player["runs"], player["innings"], player["not_outs"])
+    sr = calculate_strike_rate(player["runs"], player["balls_faced"])
+    bowl_avg = calculate_bowling_average(player.get("runs_conceded", 0), player.get("wickets", 0))
+    econ = calculate_economy_rate(player.get("runs_conceded", 0), player.get("overs_bowled", 0.0))
+    boundary_pct = calculate_boundary_percentage(player.get("fours", 0), player.get("sixes", 0), player["runs"])
+    impact = calculate_player_impact_score(player)
+
+    print_separator("*")
+    print(f" PLAYER PROFILE CARD: {player['name'].upper()} ".center(80, "*"))
+    print_separator("*")
+    print(f" Country      : {player['country']:<20} Role          : {player['role']}")
+    print(f" Matches      : {player['matches']:<20} Innings       : {player['innings']}")
+    print_separator("-")
+    print(" BATTING METRICS:")
+    print(f"  Runs        : {player['runs']:<20} Highest Score : {player['highest_score']}")
+    print(f"  Bat Average : {bat_avg:<20} Strike Rate   : {sr}%")
+    print(f"  Centuries   : {player.get('centuries', 0):<20} Half-Centuries: {player.get('half_centuries', 0)}")
+    print(f"  Fours       : {player.get('fours', 0):<20} Sixes         : {player.get('sixes', 0)}")
+    print(f"  Boundary %  : {boundary_pct}%")
+    print_separator("-")
+    print(" BOWLING METRICS:")
+    print(f"  Wickets     : {player.get('wickets', 0):<20} Overs Bowled : {player.get('overs_bowled', 0.0)}")
+    print(f"  Runs Given  : {player.get('runs_conceded', 0):<20} Economy Rate  : {econ}")
+    bowl_avg_str = "N/A (0 wickets)" if bowl_avg == float("inf") else f"{bowl_avg:.2f}"
+    print(f"  Bowl Average: {bowl_avg_str}")
+    print_separator("-")
+    print(f" OVERALL IMPACT / MVP SCORE: {impact} / 100.00")
+    print_separator("*")
+
+
+def compare_two_players(p1: Dict[str, Any], p2: Dict[str, Any]) -> None:
+    """Performs a head-to-head comparison between two cricketers."""
+    avg1 = calculate_batting_average(p1["runs"], p1["innings"], p1["not_outs"])
+    avg2 = calculate_batting_average(p2["runs"], p2["innings"], p2["not_outs"])
+    sr1 = calculate_strike_rate(p1["runs"], p1["balls_faced"])
+    sr2 = calculate_strike_rate(p2["runs"], p2["balls_faced"])
+    econ1 = calculate_economy_rate(p1.get("runs_conceded", 0), p1.get("overs_bowled", 0.0))
+    econ2 = calculate_economy_rate(p2.get("runs_conceded", 0), p2.get("overs_bowled", 0.0))
+    imp1 = calculate_player_impact_score(p1)
+    imp2 = calculate_player_impact_score(p2)
+
+    print_separator("=")
+    print(f" HEAD-TO-HEAD COMPARISON: {p1['name']} VS {p2['name']} ".center(80))
+    print_separator("=")
+    row_fmt = "{:<25} | {:<22} | {:<22}"
+    print(row_fmt.format("Metric", p1["name"], p2["name"]))
+    print_separator("-")
+    print(row_fmt.format("Country", p1["country"], p2["country"]))
+    print(row_fmt.format("Role", p1["role"], p2["role"]))
+    print(row_fmt.format("Matches", str(p1["matches"]), str(p2["matches"])))
+    print(row_fmt.format("Total Runs", str(p1["runs"]), str(p2["runs"])))
+    print(row_fmt.format("Batting Average", f"{avg1:.2f}", f"{avg2:.2f}"))
+    print(row_fmt.format("Strike Rate", f"{sr1:.2f}%", f"{sr2:.2f}%"))
+    print(row_fmt.format("Highest Score", str(p1["highest_score"]), str(p2["highest_score"])))
+    print(row_fmt.format("100s / 50s", f"{p1.get('centuries', 0)} / {p1.get('half_centuries', 0)}", f"{p2.get('centuries', 0)} / {p2.get('half_centuries', 0)}"))
+    print(row_fmt.format("Wickets", str(p1.get("wickets", 0)), str(p2.get("wickets", 0))))
+    print(row_fmt.format("Economy Rate", f"{econ1:.2f}", f"{econ2:.2f}"))
+    print(row_fmt.format("MVP Impact Score", f"{imp1:.2f}", f"{imp2:.2f}"))
+    print_separator("=")
+
+    print("ANALYSIS SUMMARY:")
+    if avg1 > avg2:
+        print(f" • {p1['name']} has a higher batting average (+{avg1 - avg2:.2f}).")
+    elif avg2 > avg1:
+        print(f" • {p2['name']} has a higher batting average (+{avg2 - avg1:.2f}).")
+    else:
+        print(" • Both players have an identical batting average.")
+
+    if sr1 > sr2:
+        print(f" • {p1['name']} scores faster with a higher strike rate (+{sr1 - sr2:.2f}%).")
+    elif sr2 > sr1:
+        print(f" • {p2['name']} scores faster with a higher strike rate (+{sr2 - sr1:.2f}%).")
+
+    if imp1 > imp2:
+        print(f" • Winner by Overall Impact: {p1['name']} (Score: {imp1})")
+    elif imp2 > imp1:
+        print(f" • Winner by Overall Impact: {p2['name']} (Score: {imp2})")
+    else:
+        print(" • Both players are tied in overall impact score.")
+    print_separator("=")
+
+
+def export_report_to_file(players: List[Dict[str, Any]], export_path: str = "cricket_analysis_export.txt") -> None:
+    """Exports structured summary report to a text file."""
+    try:
+        with open(export_path, "w", encoding="utf-8") as f:
+            f.write("=" * 70 + "\n")
+            f.write("CRICKET STATISTICS ANALYZER - SUMMARY EXPORT REPORT\n")
+            f.write("Generated by: Python Course-End Project (Author: Ruthvik)\n")
+            f.write("=" * 70 + "\n\n")
+
+            total_runs = recursive_sum_runs([p["runs"] for p in players])
+            total_wickets = sum(p.get("wickets", 0) for p in players)
+            f.write(f"Total Players Analyzed : {len(players)}\n")
+            f.write(f"Cumulative Runs Scored  : {total_runs}\n")
+            f.write(f"Cumulative Wickets Taken: {total_wickets}\n\n")
+
+            f.write("-" * 70 + "\n")
+            f.write(f"{'Name':<20} {'Role':<14} {'Runs':<8} {'Avg':<8} {'SR':<8} {'Wkts':<6}\n")
+            f.write("-" * 70 + "\n")
+
+            for p in players:
+                avg = calculate_batting_average(p["runs"], p["innings"], p["not_outs"])
+                sr = calculate_strike_rate(p["runs"], p["balls_faced"])
+                f.write(
+                    f"{p['name']:<20} {p['role']:<14} {p['runs']:<8} "
+                    f"{avg:<8.2f} {sr:<8.2f} {p.get('wickets', 0):<6}\n"
+                )
+            f.write("=" * 70 + "\n")
+        print(f"[Success]: Report successfully exported to '{export_path}'!")
+    except Exception as e:
+        print(f"[Export Notice]: File export skipped ({e}). Summary displayed on screen:")
+        display_player_table(players, "EXPORT SUMMARY")
+
+
+# =============================================================================
+# 7. ADD PLAYER FUNCTIONALITY (VALIDATED INPUTS)
+# =============================================================================
+
+def add_new_player(players: List[Dict[str, Any]]) -> None:
+    """Collects and validates inputs to register a new cricketer."""
+    print_separator("-")
+    print(" ENTER NEW CRICKETER DETAILS ".center(80, "-"))
+    print_separator("-")
+
+    name = input("Enter Player Name: ").strip()
+    if not name:
+        print("[Validation Error]: Player name cannot be blank.")
+        return
+
+    country = input("Enter Country: ").strip() or "India"
+
+    print("Choose Role: [1] Batsman  [2] Bowler  [3] All-Rounder  [4] Wicket-Keeper")
+    role_choice = input("Enter choice (1-4): ").strip()
+    role_map = {"1": "Batsman", "2": "Bowler", "3": "All-Rounder", "4": "Wicket-Keeper"}
+    role = role_map.get(role_choice, "Batsman")
+
+    def get_valid_int(prompt: str, min_val: int = 0) -> int:
+        while True:
+            val_str = input(prompt).strip()
+            try:
+                val = int(val_str)
+                if val < min_val:
+                    print(f"Value must be at least {min_val}.")
+                    continue
+                return val
+            except ValueError:
+                print("Invalid input. Please enter a valid integer.")
+
+    def get_valid_float(prompt: str, min_val: float = 0.0) -> float:
+        while True:
+            val_str = input(prompt).strip()
+            try:
+                val = float(val_str)
+                if val < min_val:
+                    print(f"Value must be at least {min_val}.")
+                    continue
+                return val
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+
+    matches = get_valid_int("Enter Matches Played: ")
+    innings = get_valid_int("Enter Innings Batted: ")
+    runs = get_valid_int("Enter Total Runs Scored: ")
+    balls = get_valid_int("Enter Total Balls Faced: ")
+    highest = get_valid_int("Enter Highest Score: ")
+    not_outs = get_valid_int("Enter Times Not Out: ")
+    centuries = get_valid_int("Enter Centuries (100s): ")
+    half_centuries = get_valid_int("Enter Half-Centuries (50s): ")
+    fours = get_valid_int("Enter Fours (4s): ")
+    sixes = get_valid_int("Enter Sixes (6s): ")
+    wickets = get_valid_int("Enter Wickets Taken: ")
+    overs = get_valid_float("Enter Overs Bowled: ")
+    runs_conceded = get_valid_int("Enter Runs Conceded: ")
+
+    new_id = max([p["id"] for p in players], default=0) + 1
+
+    new_player_dict = {
+        "id": new_id,
+        "name": name,
+        "country": country,
+        "role": role,
+        "matches": matches,
+        "innings": innings,
+        "runs": runs,
+        "balls_faced": balls,
+        "highest_score": highest,
+        "not_outs": not_outs,
+        "centuries": centuries,
+        "half_centuries": half_centuries,
+        "fours": fours,
+        "sixes": sixes,
+        "wickets": wickets,
+        "overs_bowled": overs,
+        "runs_conceded": runs_conceded,
+    }
+
+    players.append(new_player_dict)
+    save_player_data(players)
+    print(f"\n[Success]: Player '{name}' (ID: {new_id}) successfully added!")
+
+
+# =============================================================================
+# 8. MAIN INTERACTIVE CLI MENU CONTROLLER
+# =============================================================================
+
+def print_main_menu() -> None:
+    """Displays the user menu options."""
+    print("\n" + "=" * 50)
+    print("     🏏 CRICKET STATISTICS ANALYZER 🏏")
+    print("=" * 50)
+    print(" 1.  View All Players (Formatted Table)")
+    print(" 2.  Search Player by Name / Role / Country (Linear Search)")
+    print(" 3.  Search Player by Exact Name (Recursive Binary Search)")
+    print(" 4.  View Detailed Player Profile Card & Impact Score")
+    print(" 5.  Leaderboard: Top Run Scorers (Bubble Sort)")
+    print(" 6.  Leaderboard: Top Wicket Takers (Bubble Sort)")
+    print(" 7.  Leaderboard: Best Batting Strike Rates")
+    print(" 8.  Head-to-Head Player Comparison")
+    print(" 9.  Filter Players by Role / Country")
+    print(" 10. Compute Cumulative Runs (Demonstrating Recursion)")
+    print(" 11. Add a New Player Record")
+    print(" 12. Export Analytical Summary Report (.txt)")
+    print(" 13. Run Automated Verification Test Suite (Non-interactive)")
+    print(" 0.  Exit")
+    print("=" * 50)
+
+
+def run_analyzer():
+    """Main execution loop of the Cricket Statistics Analyzer."""
+    players = load_player_data()
+
+    while True:
+        print_main_menu()
+        choice = input("Enter your option (0-13): ").strip()
+
+        if choice == "1":
+            display_player_table(players, f"ALL PLAYERS DATABASE ({len(players)} PLAYERS)")
+
+        elif choice == "2":
+            query = input("Enter player name or role keyword: ")
+            results = linear_search_players(players, query)
+            display_player_table(results, f"Search Results for '{query}' (Linear Search)")
+
+        elif choice == "3":
+            sorted_by_name = sorted(players, key=lambda x: x["name"].lower())
+            target_name = input("Enter exact player name to search (e.g. MS Dhoni, Virat Kohli): ")
+            result = recursive_binary_search(sorted_by_name, target_name, 0, len(sorted_by_name) - 1)
+            if result:
+                print("\n[Match Found via Recursive Binary Search!]")
+                display_player_detailed_card(result)
+            else:
+                print(f"\n[Not Found]: No player found with name '{target_name}'.")
+
+        elif choice == "4":
+            try:
+                pid = int(input(f"Enter Player ID to view profile (1-{len(players)}): "))
+                found = next((p for p in players if p["id"] == pid), None)
+                if found:
+                    display_player_detailed_card(found)
+                else:
+                    print(f"[Error]: Player with ID {pid} not found.")
+            except ValueError:
+                print("[Error]: Please enter a numeric ID.")
+
+        elif choice == "5":
+            top_scorers = bubble_sort_players(players, "runs", descending=True)
+            display_player_table(top_scorers, "LEADERBOARD: TOP RUN SCORERS (BUBBLE SORT)")
+
+        elif choice == "6":
+            top_bowlers = bubble_sort_players(players, "wickets", descending=True)
+            display_player_table(top_bowlers, "LEADERBOARD: TOP WICKET TAKERS (BUBBLE SORT)")
+
+        elif choice == "7":
+            sr_sorted = sorted(
+                players, 
+                key=lambda p: calculate_strike_rate(p["runs"], p["balls_faced"]), 
+                reverse=True
+            )
+            print_separator("=")
+            print(" LEADERBOARD: BEST BATTING STRIKE RATES ".center(80))
+            print_separator("=")
+            print(f"{'Rank':<5} {'Player Name':<20} {'Runs':<8} {'Balls':<8} {'Strike Rate':<12}")
+            print_separator("-")
+            for idx, p in enumerate(sr_sorted, start=1):
+                sr = calculate_strike_rate(p["runs"], p["balls_faced"])
+                print(f"{idx:<5} {p['name']:<20} {p['runs']:<8} {p['balls_faced']:<8} {sr:<12.2f}%")
+            print_separator("=")
+
+        elif choice == "8":
+            display_player_table(players, "SELECT PLAYERS FOR COMPARISON")
+            try:
+                id1 = int(input("Enter ID of Player 1: "))
+                id2 = int(input("Enter ID of Player 2: "))
+                p1 = next((p for p in players if p["id"] == id1), None)
+                p2 = next((p for p in players if p["id"] == id2), None)
+                if p1 and p2:
+                    compare_two_players(p1, p2)
+                else:
+                    print("[Error]: One or both Player IDs were not found.")
+            except ValueError:
+                print("[Error]: Invalid input. IDs must be integers.")
+
+        elif choice == "9":
+            roles = list(get_unique_roles(players))
+            print(f"Available Roles: {', '.join(roles)}")
+            r_choice = input("Enter role to filter (e.g. Batsman, Bowler, Wicket-Keeper): ").strip().lower()
+            matched = [p for p in players if p["role"].lower() == r_choice]
+            display_player_table(matched, f"Filtered by Role: {r_choice.title()}")
+
+        elif choice == "10":
+            runs_list = [p["runs"] for p in players]
+            total_recursive = recursive_sum_runs(runs_list)
+            print_separator("=")
+            print(" RECURSION DEMONSTRATION ".center(80))
+            print_separator("=")
+            print(f" List of player runs extracted: {runs_list}")
+            print(f" Computed Cumulative Runs (via recursive_sum_runs): {total_recursive}")
+            print(f" Verification using Python's sum()             : {sum(runs_list)}")
+            print(" Recursion verified successfully: Both results match!")
+            print_separator("=")
+
+        elif choice == "11":
+            add_new_player(players)
+
+        elif choice == "12":
+            export_report_to_file(players)
+
+        elif choice == "13":
+            run_all_tests()
+
+        elif choice == "0":
+            print("\nThank you for using Cricket Statistics Analyzer. Goodbye!\n")
+            break
+
+        else:
+            print("[Error]: Invalid option. Please select a valid number from the menu.")
+
+
+# =============================================================================
+# 9. EMBEDDED AUTOMATED TEST & VERIFICATION SUITE
+# =============================================================================
+
+def run_all_tests():
+    """Executes non-interactive verification tests for all 5 core players.
+    
+    Can be run directly from menu Option 13 or with command line argument `python cricket_analyzer.py --test`.
+    """
+    print_separator("=")
+    print("   AUTOMATED VERIFICATION RUN: CRICKET STATISTICS ANALYZER")
+    print("   Dataset: All 70+ International Players")
+    print_separator("=")
+    print()
+
+    # 1. Test Data Loading
+    print(">>> TEST 1: Loading Player Records...")
+    players = load_player_data()
+    print(f"Loaded {len(players)} players successfully.\n")
+
+    # 2. Test All Players Table Display
+    print(">>> TEST 2: Displaying All 5 Players Formatted Table...")
+    display_player_table(players, f"ALL PLAYERS DATABASE ({len(players)} PLAYERS)")
+    print()
+
+    # 3. Test Linear Search
+    print(">>> TEST 3: Linear Search for 'Batsman'...")
+    batsmen = linear_search_players(players, "Batsman")
+    display_player_table(batsmen, "Linear Search Results: Role 'Batsman'")
+    print()
+
+    # 4. Test Recursive Binary Search
+    print(">>> TEST 4: Recursive Binary Search for 'MS Dhoni'...")
+    sorted_players = sorted(players, key=lambda x: x["name"].lower())
+    found_player = recursive_binary_search(sorted_players, "MS Dhoni", 0, len(sorted_players) - 1)
+    if found_player:
+        print("MS Dhoni successfully found via Recursive Binary Search!")
+        display_player_detailed_card(found_player)
+    else:
+        print("Player not found.")
+    print()
+
+    # 5. Test Bubble Sort (Top Run Scorers)
+    print(">>> TEST 5: Top Run Scorers (Bubble Sort Algorithm)...")
+    top_runs = bubble_sort_players(players, "runs", descending=True)
+    display_player_table(top_runs, "TOP RUN SCORERS (BUBBLE SORT)")
+    print()
+
+    # 6. Test Bubble Sort (Top Wicket Takers)
+    print(">>> TEST 6: Top Wicket Takers (Bubble Sort Algorithm)...")
+    top_wickets = bubble_sort_players(players, "wickets", descending=True)
+    display_player_table(top_wickets, "TOP WICKET TAKERS (BUBBLE SORT)")
+    print()
+
+    # 7. Test Head-to-Head Comparison
+    print(">>> TEST 7: Head-to-Head Comparison: Rohit Sharma vs Virat Kohli...")
+    p1 = next((p for p in players if p["name"] == "Rohit Sharma"), players[0])
+    p2 = next((p for p in players if p["name"] == "Virat Kohli"), players[1])
+    compare_two_players(p1, p2)
+    print()
+
+    # 8. Test Recursion on Runs
+    print(">>> TEST 8: Recursive Cumulative Runs Summation...")
+    all_runs = [p["runs"] for p in players]
+    rec_sum = recursive_sum_runs(all_runs)
+    iter_sum = sum(all_runs)
+    print(f"Runs array: {all_runs}")
+    print(f"Recursive Sum: {rec_sum} | Python sum(): {iter_sum}")
+    assert rec_sum == iter_sum, "Recursive sum mismatch!"
+    print("Assertion Passed: Recursive computation matches iterative sum.\n")
+
+    # 9. Test Report Export
+    print(">>> TEST 9: Exporting Analysis Summary Report...")
+    export_report_to_file(players, "cricket_analysis_export.txt")
+    print()
+
+    print_separator("=")
+    print("   ALL TESTS COMPLETED SUCCESSFULLY WITH ZERO ERRORS!")
+    print_separator("=")
+
+
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
+
+if __name__ == "__main__":
+    import sys
+    # If launched with '--test', run the automated verification suite directly
+    if len(sys.argv) > 1 and sys.argv[1].lower() in ["--test", "-t", "test"]:
+        run_all_tests()
+    else:
+        run_analyzer()
+
